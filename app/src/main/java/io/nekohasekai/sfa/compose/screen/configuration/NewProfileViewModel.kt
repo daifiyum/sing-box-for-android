@@ -11,6 +11,7 @@ import io.nekohasekai.sfa.database.Profile
 import io.nekohasekai.sfa.database.ProfileManager
 import io.nekohasekai.sfa.database.TypedProfile
 import io.nekohasekai.sfa.utils.HTTPClient
+import io.nekohasekai.sfa.utils.RemoteProfileFetcher
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -28,6 +29,9 @@ data class NewProfileUiState(
     val profileSource: ProfileSource = ProfileSource.CreateNew,
     // Remote profile fields
     val remoteUrl: String = "",
+    val mihomo: Boolean = false,
+    val insecure: Boolean = false,
+    val userAgent: String = RemoteProfileFetcher.MIHOMO_USER_AGENT,
     val autoUpdate: Boolean = true,
     val autoUpdateInterval: Int = 60,
     // File import
@@ -117,6 +121,18 @@ class NewProfileViewModel(application: Application) : AndroidViewModel(applicati
 
     fun updateAutoUpdate(enabled: Boolean) {
         _uiState.update { it.copy(autoUpdate = enabled) }
+    }
+
+    fun updateMihomo(enabled: Boolean) {
+        _uiState.update { it.copy(mihomo = enabled) }
+    }
+
+    fun updateInsecure(enabled: Boolean) {
+        _uiState.update { it.copy(insecure = enabled) }
+    }
+
+    fun updateUserAgent(value: String) {
+        _uiState.update { it.copy(userAgent = value) }
     }
 
     fun updateAutoUpdateInterval(interval: String) {
@@ -284,6 +300,9 @@ class NewProfileViewModel(application: Application) : AndroidViewModel(applicati
             TypedProfile().apply {
                 type = TypedProfile.Type.Remote
                 remoteURL = state.remoteUrl
+                mihomo = state.mihomo
+                insecure = state.insecure
+                userAgent = state.userAgent.trim()
                 autoUpdate = state.autoUpdate
                 autoUpdateInterval = state.autoUpdateInterval
                 lastUpdated = Date()
@@ -300,7 +319,7 @@ class NewProfileViewModel(application: Application) : AndroidViewModel(applicati
         typedProfile.path = configFile.path
 
         // Fetch initial config - this MUST succeed for remote profiles
-        val content = HTTPClient().use { it.getString(state.remoteUrl) }
+        val content = RemoteProfileFetcher.fetch(typedProfile)
         Libbox.checkConfig(content)
         val configContent = content
 

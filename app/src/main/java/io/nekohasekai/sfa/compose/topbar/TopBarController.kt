@@ -7,6 +7,7 @@ import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.compositionLocalOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
+import androidx.compose.ui.unit.dp
 
 internal data class TopBarEntry(val key: Any, val content: @Composable () -> Unit)
 
@@ -27,6 +28,7 @@ val LocalTopBarController = compositionLocalOf<TopBarController> {
 }
 
 val LocalScaffoldPadding = compositionLocalOf { PaddingValues() }
+val LocalStatusBarHeight = compositionLocalOf { 0.dp }
 
 @Composable
 fun OverrideTopBar(content: @Composable () -> Unit) {

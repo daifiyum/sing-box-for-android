@@ -14,6 +14,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -191,7 +192,7 @@ fun EditProfileScreen(
         }
 
     Box(
-        modifier = Modifier.fillMaxSize(),
+        modifier = Modifier.fillMaxSize().imePadding(),
     ) {
         val scaffoldPadding = LocalScaffoldPadding.current
 
@@ -207,9 +208,9 @@ fun EditProfileScreen(
                 modifier =
                 Modifier
                     .fillMaxSize()
-                    .verticalScroll(rememberScrollState())
                     .padding(scaffoldPadding)
                     .padding(bottom = bottomBarPadding)
+                    .verticalScroll(rememberScrollState())
                     .padding(16.dp),
                 verticalArrangement = Arrangement.spacedBy(16.dp),
             ) {
@@ -394,6 +395,15 @@ fun EditProfileScreen(
                             )
 
                             HorizontalDivider()
+
+                            io.nekohasekai.sfa.compose.screen.configuration.RemoteSubscriptionOptions(
+                                mihomo = uiState.mihomo,
+                                insecure = uiState.insecure,
+                                userAgent = uiState.userAgent,
+                                onMihomoChange = viewModel::updateMihomo,
+                                onInsecureChange = viewModel::updateInsecure,
+                                onUserAgentChange = viewModel::updateUserAgent,
+                            )
 
                             // Auto Update Toggle
                             Row(

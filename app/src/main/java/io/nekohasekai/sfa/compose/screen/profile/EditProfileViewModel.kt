@@ -13,7 +13,7 @@ import io.nekohasekai.sfa.database.Profile
 import io.nekohasekai.sfa.database.ProfileManager
 import io.nekohasekai.sfa.database.Settings
 import io.nekohasekai.sfa.database.TypedProfile
-import io.nekohasekai.sfa.utils.HTTPClient
+import io.nekohasekai.sfa.utils.RemoteProfileFetcher
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -32,6 +32,9 @@ data class EditProfileUiState(
     val icon: String? = null,
     val profileType: TypedProfile.Type? = null,
     val remoteUrl: String = "",
+    val mihomo: Boolean = false,
+    val insecure: Boolean = false,
+    val userAgent: String = "",
     val autoUpdate: Boolean = false,
     val autoUpdateInterval: Int = 60,
     val lastUpdated: Date? = null,
@@ -39,6 +42,9 @@ data class EditProfileUiState(
     val originalName: String = "",
     val originalIcon: String? = null,
     val originalRemoteUrl: String = "",
+    val originalMihomo: Boolean = false,
+    val originalInsecure: Boolean = false,
+    val originalUserAgent: String = "",
     val originalAutoUpdate: Boolean = false,
     val originalAutoUpdateInterval: Int = 60,
     // State flags
@@ -85,6 +91,12 @@ class EditProfileViewModel(application: Application) : AndroidViewModel(applicat
                         profileType = typedProfile.type,
                         remoteUrl = typedProfile.remoteURL,
                         originalRemoteUrl = typedProfile.remoteURL,
+                        mihomo = typedProfile.mihomo,
+                        originalMihomo = typedProfile.mihomo,
+                        insecure = typedProfile.insecure,
+                        originalInsecure = typedProfile.insecure,
+                        userAgent = typedProfile.userAgent,
+                        originalUserAgent = typedProfile.userAgent,
                         autoUpdate = typedProfile.autoUpdate,
                         originalAutoUpdate = typedProfile.autoUpdate,
                         autoUpdateInterval = typedProfile.autoUpdateInterval,
@@ -148,6 +160,27 @@ class EditProfileViewModel(application: Application) : AndroidViewModel(applicat
         }
     }
 
+    fun updateMihomo(enabled: Boolean) {
+        _uiState.update { state ->
+            val updated = state.copy(mihomo = enabled)
+            updated.copy(hasChanges = checkHasChanges(updated))
+        }
+    }
+
+    fun updateInsecure(enabled: Boolean) {
+        _uiState.update { state ->
+            val updated = state.copy(insecure = enabled)
+            updated.copy(hasChanges = checkHasChanges(updated))
+        }
+    }
+
+    fun updateUserAgent(value: String) {
+        _uiState.update { state ->
+            val updated = state.copy(userAgent = value)
+            updated.copy(hasChanges = checkHasChanges(updated))
+        }
+    }
+
     fun updateAutoUpdate(enabled: Boolean) {
         _uiState.update { state ->
             state.copy(
@@ -186,6 +219,9 @@ class EditProfileViewModel(application: Application) : AndroidViewModel(applicat
     private fun checkHasChanges(state: EditProfileUiState): Boolean = state.name != state.originalName ||
         state.icon != state.originalIcon ||
         state.remoteUrl != state.originalRemoteUrl ||
+        state.mihomo != state.originalMihomo ||
+        state.insecure != state.originalInsecure ||
+        state.userAgent != state.originalUserAgent ||
         state.autoUpdate != state.originalAutoUpdate ||
         state.autoUpdateInterval != state.originalAutoUpdateInterval
 
@@ -205,6 +241,9 @@ class EditProfileViewModel(application: Application) : AndroidViewModel(applicat
                 profile.name = state.name
                 profile.icon = state.icon
                 profile.typed.remoteURL = state.remoteUrl
+                profile.typed.mihomo = state.mihomo
+                profile.typed.insecure = state.insecure
+                profile.typed.userAgent = state.userAgent.trim()
 
                 // Handle auto-update changes
                 val autoUpdateChanged = state.autoUpdate != state.originalAutoUpdate
@@ -225,6 +264,10 @@ class EditProfileViewModel(application: Application) : AndroidViewModel(applicat
                         originalName = state.name,
                         originalIcon = state.icon,
                         originalRemoteUrl = state.remoteUrl,
+                        originalMihomo = state.mihomo,
+                        originalInsecure = state.insecure,
+                        originalUserAgent = profile.typed.userAgent,
+                        userAgent = profile.typed.userAgent,
                         originalAutoUpdate = state.autoUpdate,
                         originalAutoUpdateInterval = state.autoUpdateInterval,
                         hasChanges = false,
@@ -255,7 +298,7 @@ class EditProfileViewModel(application: Application) : AndroidViewModel(applicat
                 var selectedProfileUpdated = false
 
                 // Fetch remote config
-                val content = HTTPClient().use { it.getString(profile.typed.remoteURL) }
+                val content = RemoteProfileFetcher.fetch(profile.typed)
                 Libbox.checkConfig(content)
 
                 // Check if content changed

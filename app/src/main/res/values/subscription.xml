@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="profile_mihomo">mihomo</string>
+    <string name="profile_mihomo_unavailable">mihomo conversion requires the ARM64 other build.</string>
+    <string name="profile_template_path">Template: %1$s</string>
+    <string name="profile_template_missing">Template is missing or unreadable: %1$s</string>
+    <string name="profile_user_agent">User-Agent (UA)</string>
+    <string name="profile_user_agent_hint">Leave blank to use %1$s</string>
+    <string name="profile_user_agent_mihomo_hint">Leave blank to use %1$s.</string>
+    <string name="profile_user_agent_invalid">User-Agent must not contain line breaks.</string>
+</resources>

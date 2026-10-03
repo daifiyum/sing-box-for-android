@@ -78,6 +78,8 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.layout.onSizeChanged
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -135,6 +137,7 @@ import io.nekohasekai.sfa.compose.screen.tools.TailscaleStatusViewModel
 import io.nekohasekai.sfa.compose.screen.usbip.USBIPStatusViewModel
 import io.nekohasekai.sfa.compose.theme.Theme
 import io.nekohasekai.sfa.compose.topbar.LocalScaffoldPadding
+import io.nekohasekai.sfa.compose.topbar.LocalStatusBarHeight
 import io.nekohasekai.sfa.compose.topbar.LocalTopBarController
 import io.nekohasekai.sfa.compose.topbar.TopBarController
 import io.nekohasekai.sfa.compose.topbar.TopBarEntry
@@ -1026,8 +1029,16 @@ class MainActivity :
             topBarOverride?.invoke()
         }
 
+        var statusBarHeightPx by remember { mutableStateOf(0) }
+        val density = LocalDensity.current
+        val statusBarVisible = !useNavigationRail && !isSubScreen &&
+            (isRemote || currentServiceStatus == Status.Started || currentServiceStatus == Status.Starting || currentServiceStatus == Status.Stopping)
+        val statusBarHeight = if (statusBarVisible) with(density) { statusBarHeightPx.toDp() } else 0.dp
         val scaffoldContent: @Composable (PaddingValues) -> Unit = { paddingValues ->
-            CompositionLocalProvider(LocalScaffoldPadding provides paddingValues) {
+            CompositionLocalProvider(
+                LocalScaffoldPadding provides paddingValues,
+                LocalStatusBarHeight provides statusBarHeight,
+            ) {
                 Box(
                     modifier = Modifier.fillMaxSize().consumeWindowInsets(paddingValues),
                 ) {
@@ -1071,7 +1082,8 @@ class MainActivity :
                                 connectionsCount = dashboardUiState.connectionsCount,
                                 onConnectionsClick = { showConnectionsSheet = true },
                                 onDisconnectClick = { RemoteControlManager.exitRemoteControl() },
-                                modifier = Modifier.align(Alignment.BottomCenter).padding(bottom = bottomOverlayPadding),
+                                modifier = Modifier.align(Alignment.BottomCenter).padding(bottom = bottomOverlayPadding)
+                                    .onSizeChanged { statusBarHeightPx = it.height },
                             )
                         } else {
                             ServiceStatusBar(
@@ -1084,7 +1096,8 @@ class MainActivity :
                                 connectionsCount = dashboardUiState.connectionsCount,
                                 onConnectionsClick = { showConnectionsSheet = true },
                                 onStopClick = { dashboardViewModel.toggleService() },
-                                modifier = Modifier.align(Alignment.BottomCenter).padding(bottom = bottomOverlayPadding),
+                                modifier = Modifier.align(Alignment.BottomCenter).padding(bottom = bottomOverlayPadding)
+                                    .onSizeChanged { statusBarHeightPx = it.height },
                             )
                         }
                     }

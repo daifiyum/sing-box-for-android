@@ -46,6 +46,7 @@ import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import io.nekohasekai.sfa.R
 import io.nekohasekai.sfa.compose.topbar.LocalScaffoldPadding
+import io.nekohasekai.sfa.compose.topbar.LocalStatusBarHeight
 import io.nekohasekai.sfa.compose.topbar.OverrideTopBar
 import io.nekohasekai.sfa.database.Settings
 import io.nekohasekai.sfa.update.UpdateState
@@ -54,7 +55,7 @@ import io.nekohasekai.sfa.utils.HookStatusClient
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun SettingsScreen(navController: NavController) {
+fun SettingsScreen(navController: NavController, showStatusBar: Boolean = false) {
     OverrideTopBar {
         TopAppBar(
             title = { Text(stringResource(R.string.title_settings)) },
@@ -72,17 +73,19 @@ fun SettingsScreen(navController: NavController) {
     }
 
     val scaffoldPadding = LocalScaffoldPadding.current
+    val statusBarPadding = if (showStatusBar) LocalStatusBarHeight.current else 0.dp
 
     Column(
         modifier =
         Modifier
             .fillMaxSize()
             .background(MaterialTheme.colorScheme.surface)
-            .verticalScroll(rememberScrollState())
             .padding(
                 top = scaffoldPadding.calculateTopPadding() + 8.dp,
-                bottom = scaffoldPadding.calculateBottomPadding() + 8.dp,
-            ),
+                bottom = scaffoldPadding.calculateBottomPadding() + statusBarPadding,
+            )
+            .verticalScroll(rememberScrollState())
+            .padding(bottom = 8.dp),
     ) {
         // General Settings Group
         Card(

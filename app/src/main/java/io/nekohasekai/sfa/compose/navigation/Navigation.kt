@@ -607,7 +607,7 @@ fun NavHost(
         }
 
         composable(Screen.Settings.route) {
-            SettingsScreen(navController = navController)
+            SettingsScreen(navController = navController, showStatusBar = showStatusBar)
         }
 
         // Settings subscreens with slide animations
