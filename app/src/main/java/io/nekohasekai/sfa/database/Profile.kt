@@ -22,6 +22,7 @@ class Profile(
     var name: String = "",
     @ColumnInfo(defaultValue = "NULL") var icon: String? = null,
     var typed: TypedProfile = TypedProfile(),
+    @ColumnInfo(defaultValue = "NULL") var cacheId: String? = null,
 ) : Parcelable {
     @androidx.room.Dao
     interface Dao {

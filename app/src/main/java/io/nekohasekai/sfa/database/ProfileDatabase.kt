@@ -7,7 +7,7 @@ import androidx.sqlite.db.SupportSQLiteDatabase
 
 @Database(
     entities = [Profile::class, RemoteServer::class],
-    version = 3,
+    version = 4,
     exportSchema = true,
 )
 abstract class ProfileDatabase : RoomDatabase() {
@@ -16,6 +16,13 @@ abstract class ProfileDatabase : RoomDatabase() {
     abstract fun remoteServerDao(): RemoteServer.Dao
 
     companion object {
+        val MIGRATION_3_4 =
+            object : Migration(3, 4) {
+                override fun migrate(database: SupportSQLiteDatabase) {
+                    database.execSQL("ALTER TABLE profiles ADD COLUMN cacheId TEXT DEFAULT NULL")
+                }
+            }
+
         val MIGRATION_1_2 =
             object : Migration(1, 2) {
                 override fun migrate(database: SupportSQLiteDatabase) {

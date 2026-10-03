@@ -14,8 +14,6 @@ import io.nekohasekai.sfa.database.ProfileManager
 import io.nekohasekai.sfa.database.Settings
 import io.nekohasekai.sfa.database.TypedProfile
 import io.nekohasekai.sfa.utils.RemoteProfileFetcher
-import java.io.File
-import java.util.Date
 import java.util.concurrent.TimeUnit
 
 class UpdateProfileWork {
@@ -75,17 +73,9 @@ class UpdateProfileWork {
                     continue
                 }
                 try {
-                    val content = RemoteProfileFetcher.fetch(profile.typed)
-                    Libbox.checkConfig(content)
-                    val file = File(profile.typed.path)
-                    if (file.readText() != content) {
-                        File(profile.typed.path).writeText(content)
-                        if (profile.id == selectedProfile) {
-                            selectedProfileUpdated = true
-                        }
+                    if (RemoteProfileFetcher.update(profile) && profile.id == selectedProfile) {
+                        selectedProfileUpdated = true
                     }
-                    profile.typed.lastUpdated = Date()
-                    ProfileManager.update(profile)
                 } catch (e: Exception) {
                     Log.e(TAG, "update profile ${profile.name}", e)
                     success = false

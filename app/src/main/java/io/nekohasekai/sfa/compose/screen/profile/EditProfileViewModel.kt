@@ -295,24 +295,8 @@ class EditProfileViewModel(application: Application) : AndroidViewModel(applicat
             _uiState.update { it.copy(isUpdating = true) }
 
             try {
-                var selectedProfileUpdated = false
-
-                // Fetch remote config
-                val content = RemoteProfileFetcher.fetch(profile.typed)
-                Libbox.checkConfig(content)
-
-                // Check if content changed
-                val file = File(profile.typed.path)
-                if (!file.exists() || file.readText() != content) {
-                    file.writeText(content)
-                    if (profile.id == Settings.selectedProfile) {
-                        selectedProfileUpdated = true
-                    }
-                }
-
-                // Update last updated time
-                profile.typed.lastUpdated = Date()
-                ProfileManager.update(profile)
+                val contentChanged = RemoteProfileFetcher.update(profile)
+                val selectedProfileUpdated = contentChanged && profile.id == Settings.selectedProfile
 
                 // Update UI state with success indicator
                 _uiState.update {

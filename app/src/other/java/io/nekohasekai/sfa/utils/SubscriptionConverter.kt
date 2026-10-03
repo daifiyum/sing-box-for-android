@@ -6,6 +6,6 @@ import io.nekohasekai.mobile.Mobile
 object SubscriptionConverter {
     val available: Boolean get() = Build.SUPPORTED_ABIS.contains("arm64-v8a")
 
-    fun convert(url: String, template: String, userAgent: String, insecure: Boolean): String =
-        Mobile.convertURL(url, template, userAgent, "", if (insecure) "true" else "preserve")
+    fun convert(url: String, template: String, userAgent: String, insecure: Boolean, cacheId: String): String =
+        Mobile.convertURLWithCacheID(url, template, userAgent, "", if (insecure) "true" else "preserve", cacheId)
 }

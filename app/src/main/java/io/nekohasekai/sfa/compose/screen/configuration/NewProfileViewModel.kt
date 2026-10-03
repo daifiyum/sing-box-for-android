@@ -318,15 +318,7 @@ class NewProfileViewModel(application: Application) : AndroidViewModel(applicati
         val configFile = File(configDirectory, "$fileID.json")
         typedProfile.path = configFile.path
 
-        // Fetch initial config - this MUST succeed for remote profiles
-        val content = RemoteProfileFetcher.fetch(typedProfile)
-        Libbox.checkConfig(content)
-        val configContent = content
-
-        configFile.writeText(configContent)
-
-        // Create profile in database and select it
-        ProfileManager.create(profile, andSelect = true)
+        RemoteProfileFetcher.create(profile)
 
         // Reconfigure updater if auto-update is enabled
         if (state.autoUpdate) {

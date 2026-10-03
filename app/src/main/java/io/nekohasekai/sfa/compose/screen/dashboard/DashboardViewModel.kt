@@ -353,21 +353,7 @@ class DashboardViewModel :
             }
 
             try {
-                // Fetch remote config
-                val content = RemoteProfileFetcher.fetch(profile.typed)
-                Libbox.checkConfig(content)
-
-                // Check if content changed
-                val file = File(profile.typed.path)
-                var contentChanged = false
-                if (!file.exists() || file.readText() != content) {
-                    file.writeText(content)
-                    contentChanged = true
-                }
-
-                // Update last updated time
-                profile.typed.lastUpdated = Date()
-                ProfileManager.update(profile)
+                val contentChanged = RemoteProfileFetcher.update(profile)
 
                 // Reload profiles
                 loadProfiles()
