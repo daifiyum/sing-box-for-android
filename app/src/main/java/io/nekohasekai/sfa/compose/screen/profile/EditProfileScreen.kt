@@ -15,7 +15,6 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.imePadding
-import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -58,7 +57,9 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -184,9 +185,12 @@ fun EditProfileScreen(
         )
     }
 
+    val scaffoldPadding = LocalScaffoldPadding.current
+    val density = LocalDensity.current
+    var saveBarHeightPx by remember { mutableStateOf(0) }
     val bottomBarPadding =
         if (uiState.hasChanges) {
-            88.dp
+            (with(density) { saveBarHeightPx.toDp() } - scaffoldPadding.calculateBottomPadding()).coerceAtLeast(0.dp)
         } else {
             0.dp
         }
@@ -194,8 +198,6 @@ fun EditProfileScreen(
     Box(
         modifier = Modifier.fillMaxSize().imePadding(),
     ) {
-        val scaffoldPadding = LocalScaffoldPadding.current
-
         // Progress indicator at top (only for initial loading)
         if (uiState.isLoading) {
             LinearProgressIndicator(
@@ -527,12 +529,11 @@ fun EditProfileScreen(
             visible = uiState.hasChanges,
             enter = fadeIn() + expandVertically(),
             exit = fadeOut() + shrinkVertically(),
-            modifier = Modifier.align(Alignment.BottomCenter),
+            modifier = Modifier.align(Alignment.BottomCenter).onSizeChanged { saveBarHeightPx = it.height },
         ) {
             Surface(
                 modifier = Modifier.fillMaxWidth(),
                 color = MaterialTheme.colorScheme.surface,
-                tonalElevation = 3.dp,
             ) {
                 Box(
                     modifier =

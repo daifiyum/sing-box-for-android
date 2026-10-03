@@ -668,4 +668,6 @@
     <string name="taildrop_dismiss">关闭</string>
     <string name="taildrop_open_app">打开 sing-box</string>
     <string name="taildrop_notification_title">正在发送文件</string>
+    <string name="groups_switch_to_list">切换为列表显示</string>
+    <string name="groups_switch_to_grid">切换为网格显示</string>
 </resources>

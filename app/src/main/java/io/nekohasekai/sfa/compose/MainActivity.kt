@@ -126,6 +126,8 @@ import io.nekohasekai.sfa.compose.screen.connections.ConnectionDetailsScreen
 import io.nekohasekai.sfa.compose.screen.connections.ConnectionsPage
 import io.nekohasekai.sfa.compose.screen.connections.ConnectionsViewModel
 import io.nekohasekai.sfa.compose.screen.dashboard.DashboardViewModel
+import io.nekohasekai.sfa.compose.screen.dashboard.GroupActionButton
+import io.nekohasekai.sfa.compose.screen.dashboard.GroupLayoutToggleButton
 import io.nekohasekai.sfa.compose.screen.dashboard.GroupsCard
 import io.nekohasekai.sfa.compose.screen.dashboard.groups.GroupsViewModel
 import io.nekohasekai.sfa.compose.screen.log.LogViewModel
@@ -1314,6 +1316,7 @@ class MainActivity :
                         contentWindowInsets = ScaffoldDefaults.contentWindowInsets.exclude(
                             WindowInsets.safeDrawing.only(WindowInsetsSides.Start),
                         ),
+                        containerColor = MaterialTheme.colorScheme.surface,
                         snackbarHost = { SnackbarHost(hostState = snackbarHostState) },
                         topBar = topBarContent,
                     ) { paddingValues ->
@@ -1323,6 +1326,7 @@ class MainActivity :
             } else {
                 Scaffold(
                     modifier = Modifier.fillMaxSize(),
+                    containerColor = MaterialTheme.colorScheme.surface,
                     snackbarHost = { SnackbarHost(hostState = snackbarHostState) },
                     topBar = topBarContent,
                     bottomBar = {
@@ -1421,21 +1425,25 @@ class MainActivity :
                         viewModel = groupsViewModel,
                         listHeaderContent = {
                             Row(
-                                modifier =
-                                Modifier
+                                modifier = Modifier
                                     .fillMaxWidth()
-                                    .padding(horizontal = 8.dp),
-                                horizontalArrangement = Arrangement.SpaceBetween,
+                                    .padding(start = 16.dp, end = 8.dp, bottom = 8.dp),
+                                horizontalArrangement = Arrangement.Start,
                                 verticalAlignment = Alignment.CenterVertically,
                             ) {
                                 Text(
                                     text = stringResource(R.string.title_groups),
-                                    style = MaterialTheme.typography.headlineSmall,
+                                    modifier = Modifier.weight(1f),
+                                    style = MaterialTheme.typography.titleLarge,
                                     fontWeight = FontWeight.Medium,
                                     color = MaterialTheme.colorScheme.onSurface,
                                 )
+                                GroupLayoutToggleButton(
+                                    listLayout = groupsUiState.listLayout,
+                                    onClick = groupsViewModel::toggleLayout,
+                                )
                                 if (groupsUiState.groups.isNotEmpty()) {
-                                    IconButton(onClick = { groupsViewModel.toggleAllGroups() }) {
+                                    GroupActionButton(onClick = { groupsViewModel.toggleAllGroups() }) {
                                         Icon(
                                             imageVector = if (allCollapsed) {
                                                 Icons.Default.UnfoldMore
@@ -1447,6 +1455,8 @@ class MainActivity :
                                             } else {
                                                 stringResource(R.string.collapse_all)
                                             },
+                                            modifier = Modifier.size(24.dp),
+                                            tint = MaterialTheme.colorScheme.onSurfaceVariant,
                                         )
                                     }
                                 }

@@ -45,13 +45,9 @@ fun RemoteSubscriptionOptions(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.SpaceBetween,
             ) {
-                Text("insecure", style = MaterialTheme.typography.bodyLarge)
+                Text(stringResource(R.string.profile_insecure), style = MaterialTheme.typography.bodyLarge)
                 Switch(checked = insecure, onCheckedChange = onInsecureChange)
             }
-            Text(
-                stringResource(R.string.profile_template_path, RemoteProfileFetcher.TEMPLATE_PATH),
-                style = MaterialTheme.typography.bodySmall,
-            )
             OutlinedTextField(
                 value = userAgent,
                 onValueChange = onUserAgentChange,

@@ -115,6 +115,7 @@ object Settings {
 
     var dashboardItemOrder by dataStore.string(SettingsKey.DASHBOARD_ITEM_ORDER) { "" }
     var dashboardDisabledItems by dataStore.stringSet(SettingsKey.DASHBOARD_DISABLED_ITEMS) { emptySet() }
+    var groupsListLayout by dataStore.boolean(SettingsKey.GROUPS_LIST_LAYOUT) { true }
 
     var activeRemoteServerId by dataStore.long(SettingsKey.ACTIVE_REMOTE_SERVER_ID) { 0L }
 

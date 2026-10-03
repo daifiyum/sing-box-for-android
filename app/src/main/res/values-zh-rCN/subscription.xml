@@ -1,11 +1,12 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="profile_mihomo">mihomo</string>
+    <string name="profile_insecure">允许不安全</string>
+    <string name="profile_mihomo">clash-meta</string>
     <string name="profile_mihomo_unavailable">mihomo 转换需要 ARM64 的 other 版本。</string>
     <string name="profile_template_path">模板路径：%1$s</string>
     <string name="profile_template_missing">模板文件不存在或无法读取：%1$s</string>
     <string name="profile_user_agent">User-Agent（UA）</string>
-    <string name="profile_user_agent_hint">留空使用 %1$s</string>
-    <string name="profile_user_agent_mihomo_hint">留空使用 %1$s。</string>
+    <string name="profile_user_agent_hint">默认使用 %1$s</string>
+    <string name="profile_user_agent_mihomo_hint">默认使用 %1$s。</string>
     <string name="profile_user_agent_invalid">UA 不能包含换行符。</string>
 </resources>

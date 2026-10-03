@@ -57,6 +57,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.layout.onSizeChanged
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.ImeAction
@@ -147,16 +149,17 @@ fun IconSelectionScreen(currentIconId: String?, onIconSelected: (String?) -> Uni
         currentIconId?.let { id ->
             MaterialIconsLibrary.getIconById(id)?.let { icon -> id to icon }
         }
+    val density = LocalDensity.current
+    val scaffoldPadding = LocalScaffoldPadding.current
+    var currentIconBarHeightPx by remember { mutableStateOf(0) }
     val bottomBarPadding =
         if (currentIcon != null) {
-            88.dp
+            (with(density) { currentIconBarHeightPx.toDp() } - scaffoldPadding.calculateBottomPadding()).coerceAtLeast(0.dp)
         } else {
             0.dp
         }
 
     Box(modifier = Modifier.fillMaxSize()) {
-        val scaffoldPadding = LocalScaffoldPadding.current
-
         Column(
             modifier =
             Modifier
@@ -383,6 +386,7 @@ fun IconSelectionScreen(currentIconId: String?, onIconSelected: (String?) -> Uni
                 Modifier
                     .fillMaxWidth()
                     .align(Alignment.BottomCenter)
+                    .onSizeChanged { currentIconBarHeightPx = it.height }
                     .padding(bottom = scaffoldPadding.calculateBottomPadding())
                     .padding(horizontal = 16.dp, vertical = 8.dp),
                 colors =

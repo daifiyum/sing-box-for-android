@@ -5,7 +5,6 @@ import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -14,6 +13,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -22,13 +22,13 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ViewList
 import androidx.compose.material.icons.filled.ExpandMore
+import androidx.compose.material.icons.filled.GridView
 import androidx.compose.material.icons.filled.Speed
 import androidx.compose.material.icons.filled.UnfoldLess
 import androidx.compose.material.icons.filled.UnfoldMore
 import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.DropdownMenu
-import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -61,6 +61,7 @@ import androidx.compose.ui.input.nestedscroll.NestedScrollConnection
 import androidx.compose.ui.input.nestedscroll.NestedScrollSource
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Velocity
@@ -110,8 +111,12 @@ fun GroupsCard(
             TopAppBar(
                 title = { Text(stringResource(R.string.title_groups)) },
                 actions = {
+                    GroupLayoutToggleButton(
+                        listLayout = uiState.listLayout,
+                        onClick = actualViewModel::toggleLayout,
+                    )
                     if (uiState.groups.isNotEmpty()) {
-                        IconButton(onClick = { actualViewModel.toggleAllGroups() }) {
+                        GroupActionButton(onClick = { actualViewModel.toggleAllGroups() }) {
                             Icon(
                                 imageVector =
                                 if (allCollapsed) {
@@ -280,14 +285,17 @@ private fun GroupsCardContent(
                         }
                     }
                     if (isExpanded) {
-                        val rowItems = group.items.chunked(2)
+                        val columns = if (uiState.listLayout) 1 else 2
+                        val rowItems = group.items.chunked(columns)
                         rowItems.forEachIndexed { rowIndex, row ->
                             item(
-                                key = "row:${group.tag}:${row.first().tag}",
+                                key = "row:${uiState.listLayout}:${group.tag}:${row.first().tag}",
                                 contentType = "GroupItemRow",
                             ) {
                                 GroupItemRow(
                                     row = row,
+                                    listLayout = uiState.listLayout,
+                                    testingItems = uiState.testingItems,
                                     selectedTag = group.selected,
                                     isSelectable = group.selectable,
                                     isLast = rowIndex == rowItems.lastIndex,
@@ -312,6 +320,30 @@ private fun GroupsCardContent(
             }
         }
     }
+}
+
+@Composable
+fun GroupLayoutToggleButton(listLayout: Boolean, onClick: () -> Unit) {
+    GroupActionButton(onClick = onClick) {
+        Icon(
+            imageVector = if (listLayout) Icons.Default.GridView else Icons.AutoMirrored.Filled.ViewList,
+            contentDescription = stringResource(
+                if (listLayout) R.string.groups_switch_to_grid else R.string.groups_switch_to_list,
+            ),
+            modifier = Modifier.size(20.dp),
+            tint = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+    }
+}
+
+@Composable
+fun GroupActionButton(onClick: () -> Unit, enabled: Boolean = true, content: @Composable () -> Unit) {
+    IconButton(
+        onClick = onClick,
+        enabled = enabled,
+        modifier = Modifier.size(48.dp),
+        content = content,
+    )
 }
 
 private val GroupCardTopShape = RoundedCornerShape(topStart = 16.dp, topEnd = 16.dp)
@@ -376,7 +408,7 @@ private fun GroupHeader(
         Row(
             modifier = Modifier.padding(start = 16.dp, end = 8.dp, top = 6.dp, bottom = 2.dp),
             verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            horizontalArrangement = Arrangement.Start,
         ) {
             Row(
                 modifier = Modifier.weight(1f),
@@ -398,22 +430,26 @@ private fun GroupHeader(
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             }
-            Surface(
-                shape = RoundedCornerShape(999.dp),
-                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.08f),
+            Box(
+                modifier = Modifier.size(48.dp),
+                contentAlignment = Alignment.Center,
             ) {
-                Text(
-                    text = "${group.items.size}",
-                    style = MaterialTheme.typography.labelSmall,
-                    fontWeight = FontWeight.SemiBold,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp),
-                )
+                Surface(
+                    shape = RoundedCornerShape(999.dp),
+                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.08f),
+                ) {
+                    Text(
+                        text = "${group.items.size}",
+                        style = MaterialTheme.typography.labelSmall,
+                        fontWeight = FontWeight.SemiBold,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp),
+                    )
+                }
             }
-            IconButton(
+            GroupActionButton(
                 onClick = onUrlTest,
                 enabled = !isTesting,
-                modifier = Modifier.size(40.dp),
             ) {
                 if (isTesting) {
                     CircularProgressIndicator(
@@ -434,20 +470,25 @@ private fun GroupHeader(
                 animationSpec = tween(200),
                 label = "ExpandIcon",
             )
-            Icon(
-                imageVector = Icons.Default.ExpandMore,
-                contentDescription =
-                if (isExpanded) {
-                    stringResource(R.string.collapse)
-                } else {
-                    stringResource(R.string.expand)
-                },
-                modifier =
-                Modifier
-                    .size(24.dp)
-                    .graphicsLayer { rotationZ = rotationAngle },
-                tint = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
+            Box(
+                modifier = Modifier.size(48.dp),
+                contentAlignment = Alignment.Center,
+            ) {
+                Icon(
+                    imageVector = Icons.Default.ExpandMore,
+                    contentDescription =
+                    if (isExpanded) {
+                        stringResource(R.string.collapse)
+                    } else {
+                        stringResource(R.string.expand)
+                    },
+                    modifier =
+                    Modifier
+                        .size(24.dp)
+                        .graphicsLayer { rotationZ = rotationAngle },
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
         }
     }
 }
@@ -514,6 +555,8 @@ private fun GroupDotsGrid(
 @Composable
 private fun GroupItemRow(
     row: List<GroupItem>,
+    listLayout: Boolean,
+    testingItems: Set<String>,
     selectedTag: String,
     isSelectable: Boolean,
     isLast: Boolean,
@@ -543,6 +586,8 @@ private fun GroupItemRow(
             row.forEach { item ->
                 ProxyChip(
                     item = item,
+                    listLayout = listLayout,
+                    isTesting = item.tag in testingItems,
                     isSelected = item.tag == selectedTag,
                     isSelectable = isSelectable,
                     palette = palette,
@@ -551,17 +596,18 @@ private fun GroupItemRow(
                     modifier = Modifier.weight(1f),
                 )
             }
-            repeat(2 - row.size) {
+            repeat((if (listLayout) 1 else 2) - row.size) {
                 Spacer(modifier = Modifier.weight(1f))
             }
         }
     }
 }
 
-@OptIn(ExperimentalFoundationApi::class)
 @Composable
 private fun ProxyChip(
     item: GroupItem,
+    listLayout: Boolean,
+    isTesting: Boolean,
     isSelected: Boolean,
     isSelectable: Boolean,
     palette: UrlTestPalette,
@@ -569,7 +615,6 @@ private fun ProxyChip(
     onUrlTest: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    var showContextMenu by remember { mutableStateOf(false) }
     val chipShape = RoundedCornerShape(12.dp)
     Box(modifier = modifier) {
         Surface(
@@ -577,10 +622,7 @@ private fun ProxyChip(
             Modifier
                 .fillMaxWidth()
                 .clip(chipShape)
-                .combinedClickable(
-                    onClick = { if (isSelectable) onClick() },
-                    onLongClick = { showContextMenu = true },
-                ),
+                .clickable(enabled = isSelectable, onClick = onClick),
             shape = chipShape,
             color =
             if (isSelected) {
@@ -595,7 +637,7 @@ private fun ProxyChip(
             ) {
                 Text(
                     text = item.tag,
-                    style = MaterialTheme.typography.bodyMedium,
+                    style = if (listLayout) MaterialTheme.typography.bodyLarge else MaterialTheme.typography.bodyMedium,
                     fontWeight = FontWeight.SemiBold,
                     color =
                     if (isSelected) {
@@ -603,17 +645,21 @@ private fun ProxyChip(
                     } else {
                         MaterialTheme.colorScheme.onSurface
                     },
-                    maxLines = 1,
+                    minLines = if (listLayout) 1 else 2,
+                    maxLines = if (listLayout) Int.MAX_VALUE else 2,
                     overflow = TextOverflow.Ellipsis,
                 )
                 Row(
                     modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
                     Text(
                         text = item.displayType,
-                        style = MaterialTheme.typography.labelSmall,
+                        modifier = Modifier.weight(1f),
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                        style = if (listLayout) MaterialTheme.typography.bodySmall else MaterialTheme.typography.labelSmall,
                         color =
                         if (isSelected) {
                             MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.7f)
@@ -621,35 +667,38 @@ private fun ProxyChip(
                             MaterialTheme.colorScheme.onSurfaceVariant
                         },
                     )
-                    if (item.urlTestDelay > 0) {
-                        Text(
-                            text = "${item.urlTestDelay}ms",
-                            style = MaterialTheme.typography.labelSmall,
-                            fontWeight = FontWeight.SemiBold,
-                            color = palette.forDelay(item.urlTestDelay),
-                        )
+                    Surface(
+                        modifier = Modifier
+                            .clip(RoundedCornerShape(999.dp))
+                            .clickable(role = Role.Button) { if (!isTesting) onUrlTest() },
+                        shape = RoundedCornerShape(999.dp),
+                        color = palette.good.copy(alpha = 0.09f),
+                    ) {
+                        Box(
+                            modifier =
+                            Modifier
+                                .defaultMinSize(minWidth = 40.dp, minHeight = 24.dp)
+                                .padding(horizontal = 6.dp, vertical = 2.dp),
+                            contentAlignment = Alignment.Center,
+                        ) {
+                            if (isTesting) {
+                                CircularProgressIndicator(
+                                    modifier = Modifier.size(14.dp),
+                                    strokeWidth = 2.dp,
+                                    color = palette.good,
+                                )
+                            } else {
+                                Text(
+                                    text = if (item.urlTestDelay > 0) "${item.urlTestDelay}ms" else stringResource(R.string.url_test),
+                                    style = if (listLayout) MaterialTheme.typography.bodySmall else MaterialTheme.typography.labelSmall,
+                                    fontWeight = FontWeight.SemiBold,
+                                    color = if (item.urlTestDelay > 0) palette.forDelay(item.urlTestDelay) else palette.good,
+                                    maxLines = 1,
+                                )
+                            }
+                        }
                     }
                 }
-            }
-        }
-        if (showContextMenu) {
-            DropdownMenu(
-                expanded = true,
-                onDismissRequest = { showContextMenu = false },
-            ) {
-                DropdownMenuItem(
-                    text = { Text(stringResource(R.string.url_test)) },
-                    leadingIcon = {
-                        Icon(
-                            Icons.Default.Speed,
-                            contentDescription = null,
-                        )
-                    },
-                    onClick = {
-                        showContextMenu = false
-                        onUrlTest()
-                    },
-                )
             }
         }
     }

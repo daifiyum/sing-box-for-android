@@ -1,13 +1,17 @@
 package io.nekohasekai.sfa.compose.screen.dashboard.groups
 
 import androidx.lifecycle.viewModelScope
+import androidx.preference.PreferenceDataStore
 import io.nekohasekai.libbox.OutboundGroup
 import io.nekohasekai.sfa.compose.base.BaseViewModel
 import io.nekohasekai.sfa.compose.base.ScreenEvent
 import io.nekohasekai.sfa.compose.model.Group
 import io.nekohasekai.sfa.compose.model.GroupItem
 import io.nekohasekai.sfa.compose.model.toList
+import io.nekohasekai.sfa.constant.SettingsKey
 import io.nekohasekai.sfa.constant.Status
+import io.nekohasekai.sfa.database.Settings
+import io.nekohasekai.sfa.database.preference.OnPreferenceDataStoreChangeListener
 import io.nekohasekai.sfa.utils.AppLifecycleObserver
 import io.nekohasekai.sfa.utils.CommandClient
 import io.nekohasekai.sfa.utils.CommandTarget
@@ -17,15 +21,19 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import kotlinx.coroutines.withTimeoutOrNull
 
 data class GroupsUiState(
     val groups: List<Group> = emptyList(),
     val isLoading: Boolean = false,
     val expandedGroups: Set<String> = emptySet(),
     val testingGroups: Set<String> = emptySet(),
+    val testingItems: Set<String> = emptySet(),
     val showCloseConnectionsSnackbar: Boolean = false,
+    val listLayout: Boolean = true,
 )
 
 sealed class GroupsEvent : ScreenEvent {
@@ -34,7 +42,8 @@ sealed class GroupsEvent : ScreenEvent {
 
 class GroupsViewModel(private val sharedCommandClient: CommandClient? = null) :
     BaseViewModel<GroupsUiState, GroupsEvent>(),
-    CommandClient.Handler {
+    CommandClient.Handler,
+    OnPreferenceDataStoreChangeListener {
     private val commandClient: CommandClient
     private val isUsingSharedClient: Boolean
 
@@ -43,6 +52,7 @@ class GroupsViewModel(private val sharedCommandClient: CommandClient? = null) :
     private var lastServiceStatus: Status = Status.Stopped
 
     init {
+        Settings.dataStore.registerChangeListener(this)
         if (sharedCommandClient != null) {
             commandClient = sharedCommandClient
             isUsingSharedClient = true
@@ -90,10 +100,23 @@ class GroupsViewModel(private val sharedCommandClient: CommandClient? = null) :
 
     private data class SessionTarget(val connect: Boolean, val remoteServerId: Long?)
 
-    override fun createInitialState() = GroupsUiState()
+    override fun createInitialState() = GroupsUiState(listLayout = Settings.groupsListLayout)
+
+    fun toggleLayout() {
+        Settings.groupsListLayout = !uiState.value.listLayout
+    }
+
+    override fun onPreferenceDataStoreChanged(store: PreferenceDataStore, key: String) {
+        if (key == SettingsKey.GROUPS_LIST_LAYOUT) {
+            viewModelScope.launch {
+                updateState { copy(listLayout = Settings.groupsListLayout) }
+            }
+        }
+    }
 
     override fun onCleared() {
         super.onCleared()
+        Settings.dataStore.unregisterChangeListener(this)
         if (isUsingSharedClient) {
             commandClient.removeHandler(this)
         } else {
@@ -224,11 +247,25 @@ class GroupsViewModel(private val sharedCommandClient: CommandClient? = null) :
     }
 
     fun urlTest(outboundTag: String) {
+        if (outboundTag in uiState.value.testingItems) return
+        val previousItem = uiState.value.groups.asSequence().flatMap { it.items.asSequence() }.firstOrNull { it.tag == outboundTag }
+        updateState { copy(testingItems = testingItems + outboundTag) }
         viewModelScope.launch(Dispatchers.IO) {
             try {
                 CommandTarget.standaloneClient().urlTest(outboundTag)
+                // The command starts a background test; wait for the subscribed result.
+                withTimeoutOrNull(30_000L) {
+                    uiState.first { state ->
+                        val item = state.groups.asSequence().flatMap { it.items.asSequence() }.firstOrNull { it.tag == outboundTag }
+                        item == null || item.urlTestTime != previousItem?.urlTestTime || item.urlTestDelay != previousItem?.urlTestDelay
+                    }
+                }
             } catch (e: Exception) {
                 sendError(e)
+            } finally {
+                withContext(Dispatchers.Main) {
+                    updateState { copy(testingItems = testingItems - outboundTag) }
+                }
             }
         }
     }

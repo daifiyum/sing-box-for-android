@@ -739,4 +739,6 @@
     <string name="endpoint_browser_navigation_failed">Browser navigation failed: %1$s</string>
     <string name="endpoint_browser_too_many_windows">The authentication page opened too many browser windows.</string>
     <string name="endpoint_browser_profile_unavailable">Browser authentication is unavailable on this device.</string>
+    <string name="groups_switch_to_list">Switch to list view</string>
+    <string name="groups_switch_to_grid">Switch to grid view</string>
 </resources>
