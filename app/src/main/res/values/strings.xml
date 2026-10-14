@@ -10,6 +10,9 @@
     <string name="ok">OK</string>
     <string name="cancel">Cancel</string>
     <string name="save">Save</string>
+    <string name="subscription_template_edit">Edit template</string>
+    <string name="subscription_template">Subscription template</string>
+    <string name="subscription_template_description">After saving, changes apply when you update or create a subscription.</string>
     <string name="discard">Discard</string>
     <string name="edit">Edit</string>
     <string name="close">Close</string>

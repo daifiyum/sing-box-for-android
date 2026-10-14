@@ -100,10 +100,11 @@ fun EditProfileContentScreen(
     onNavigateBack: () -> Unit,
     modifier: Modifier = Modifier,
     isReadOnly: Boolean = false,
+    isTemplate: Boolean = false,
 ) {
     val viewModel: EditProfileContentViewModel =
         viewModel(
-            factory = EditProfileContentViewModel.Factory(profileId, isReadOnly),
+            factory = EditProfileContentViewModel.Factory(profileId, isReadOnly, isTemplate),
         )
     val uiState by viewModel.uiState.collectAsState()
     val context = LocalContext.current
@@ -149,7 +150,9 @@ fun EditProfileContentScreen(
             title = {
                 Column {
                     Text(
-                        if (uiState.isReadOnly) {
+                        if (isTemplate) {
+                            stringResource(R.string.subscription_template_edit)
+                        } else if (uiState.isReadOnly) {
                             stringResource(R.string.view_configuration)
                         } else {
                             stringResource(R.string.title_edit_configuration)
@@ -641,23 +644,25 @@ fun EditProfileContentScreen(
                                 )
                             }
 
-                            // Format button with text
-                            TextButton(
-                                onClick = { viewModel.formatConfiguration() },
-                                modifier = Modifier.padding(end = 8.dp),
-                            ) {
-                                Icon(
-                                    imageVector = Icons.Default.Code,
-                                    contentDescription = null,
-                                    modifier = Modifier.size(18.dp),
-                                    tint = MaterialTheme.colorScheme.primary,
-                                )
-                                Spacer(modifier = Modifier.width(4.dp))
-                                Text(
-                                    text = stringResource(R.string.menu_format),
-                                    style = MaterialTheme.typography.labelLarge,
-                                    color = MaterialTheme.colorScheme.primary,
-                                )
+                            if (!isTemplate) {
+                                // Format button with text
+                                TextButton(
+                                    onClick = { viewModel.formatConfiguration() },
+                                    modifier = Modifier.padding(end = 8.dp),
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Default.Code,
+                                        contentDescription = null,
+                                        modifier = Modifier.size(18.dp),
+                                        tint = MaterialTheme.colorScheme.primary,
+                                    )
+                                    Spacer(modifier = Modifier.width(4.dp))
+                                    Text(
+                                        text = stringResource(R.string.menu_format),
+                                        style = MaterialTheme.typography.labelLarge,
+                                        color = MaterialTheme.colorScheme.primary,
+                                    )
+                                }
                             }
 
                             VerticalDivider(

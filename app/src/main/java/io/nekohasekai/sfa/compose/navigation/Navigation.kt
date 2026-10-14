@@ -32,6 +32,7 @@ import io.nekohasekai.sfa.compose.screen.settings.EditRemoteServerScreen
 import io.nekohasekai.sfa.compose.screen.settings.FDroidMirrorScreen
 import io.nekohasekai.sfa.compose.screen.settings.PrivilegeSettingsScreen
 import io.nekohasekai.sfa.compose.screen.settings.ProfileOverrideScreen
+import io.nekohasekai.sfa.compose.screen.settings.SubscriptionTemplateEditorScreen
 import io.nekohasekai.sfa.compose.screen.settings.RemoteControlScreen
 import io.nekohasekai.sfa.compose.screen.settings.ServiceSettingsScreen
 import io.nekohasekai.sfa.compose.screen.settings.SettingsScreen
@@ -659,6 +660,16 @@ fun NavHost(
             popExitTransition = slideOutToRight,
         ) {
             ProfileOverrideScreen(navController = navController, serviceStatus = serviceStatus)
+        }
+
+        composable(
+            route = "settings/profile_override/template",
+            enterTransition = slideInFromRight,
+            exitTransition = slideOutToLeft,
+            popEnterTransition = slideInFromLeft,
+            popExitTransition = slideOutToRight,
+        ) {
+            SubscriptionTemplateEditorScreen(navController = navController)
         }
 
         composable(

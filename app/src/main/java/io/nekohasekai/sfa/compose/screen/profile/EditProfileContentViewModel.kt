@@ -9,6 +9,7 @@ import io.nekohasekai.sfa.compat.ProfileEditorColors
 import io.nekohasekai.sfa.database.Profile
 import io.nekohasekai.sfa.database.ProfileManager
 import io.nekohasekai.sfa.ktx.unwrap
+import io.nekohasekai.sfa.utils.RemoteProfileFetcher
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
@@ -38,7 +39,11 @@ data class EditProfileContentUiState(
     val profileName: String = "", // Add profile name
 )
 
-class EditProfileContentViewModel(private val profileId: Long, initialIsReadOnly: Boolean = false) : ViewModel() {
+class EditProfileContentViewModel(
+    private val profileId: Long,
+    initialIsReadOnly: Boolean = false,
+    private val isTemplate: Boolean = false,
+) : ViewModel() {
     private val _uiState =
         MutableStateFlow(
             EditProfileContentUiState(
@@ -93,6 +98,7 @@ class EditProfileContentViewModel(private val profileId: Long, initialIsReadOnly
     }
 
     private fun scheduleConfigurationCheck() {
+        if (isTemplate) return
         configCheckJob?.cancel()
 
         if (editor?.isCompletionWindowShowing() != true && _uiState.value.configurationError != null) {
@@ -152,6 +158,21 @@ class EditProfileContentViewModel(private val profileId: Long, initialIsReadOnly
             _uiState.update { it.copy(isLoading = true) }
 
             try {
+                if (isTemplate) {
+                    val content = RemoteProfileFetcher.readTemplate()
+                    withContext(Dispatchers.Main) {
+                        editor?.setText(content)
+                        _uiState.update {
+                            it.copy(
+                                originalContent = content,
+                                hasUnsavedChanges = false,
+                                isLoading = false,
+                                profileName = "template.json",
+                            )
+                        }
+                    }
+                    return@launch
+                }
                 val loadedProfile =
                     ProfileManager.get(profileId)
                         ?: throw IllegalArgumentException("Profile not found")
@@ -192,9 +213,13 @@ class EditProfileContentViewModel(private val profileId: Long, initialIsReadOnly
                         editor?.getText() ?: ""
                     }
 
-                // Save to file without validation
-                profile?.let { p ->
-                    File(p.typed.path).writeText(currentContent)
+                if (isTemplate) {
+                    RemoteProfileFetcher.saveTemplate(currentContent)
+                } else {
+                    // Save profiles without validation.
+                    profile?.let { p ->
+                        File(p.typed.path).writeText(currentContent)
+                    }
                 }
 
                 _uiState.update {
@@ -221,6 +246,7 @@ class EditProfileContentViewModel(private val profileId: Long, initialIsReadOnly
     }
 
     fun formatConfiguration() {
+        if (isTemplate) return
         viewModelScope.launch(Dispatchers.IO) {
             _uiState.update { it.copy(isLoading = true) }
 
@@ -345,11 +371,12 @@ class EditProfileContentViewModel(private val profileId: Long, initialIsReadOnly
     class Factory(
         private val profileId: Long,
         private val initialIsReadOnly: Boolean = false,
+        private val isTemplate: Boolean = false,
     ) : ViewModelProvider.Factory {
         @Suppress("UNCHECKED_CAST")
         override fun <T : ViewModel> create(modelClass: Class<T>): T {
             if (modelClass.isAssignableFrom(EditProfileContentViewModel::class.java)) {
-                return EditProfileContentViewModel(profileId, initialIsReadOnly) as T
+                return EditProfileContentViewModel(profileId, initialIsReadOnly, isTemplate) as T
             }
             throw IllegalArgumentException("Unknown ViewModel class")
         }

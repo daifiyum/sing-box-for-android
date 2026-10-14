@@ -17,6 +17,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.outlined.KeyboardArrowRight
 import androidx.compose.material.icons.outlined.AppShortcut
+import androidx.compose.material.icons.outlined.Description
 import androidx.compose.material.icons.outlined.FilterList
 import androidx.compose.material.icons.outlined.Route
 import androidx.compose.material.icons.outlined.SmartToy
@@ -524,6 +525,35 @@ fun ProfileOverrideScreen(
                     )
                 }
             }
+        }
+
+        Text(
+            text = stringResource(R.string.subscription_template),
+            style = MaterialTheme.typography.labelLarge,
+            color = MaterialTheme.colorScheme.primary,
+            modifier = Modifier.padding(start = 32.dp, top = 16.dp, bottom = 8.dp),
+        )
+
+        Card(
+            modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
+            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainer),
+        ) {
+            ListItem(
+                headlineContent = { Text(stringResource(R.string.subscription_template_edit)) },
+                supportingContent = { Text(stringResource(R.string.subscription_template_description)) },
+                leadingContent = {
+                    Icon(
+                        Icons.Outlined.Description,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.primary,
+                    )
+                },
+                trailingContent = {
+                    Icon(Icons.AutoMirrored.Outlined.KeyboardArrowRight, contentDescription = null)
+                },
+                modifier = Modifier.clickable { navController.navigate("settings/profile_override/template") },
+                colors = ListItemDefaults.colors(containerColor = Color.Transparent),
+            )
         }
 
         // Shizuku dialog

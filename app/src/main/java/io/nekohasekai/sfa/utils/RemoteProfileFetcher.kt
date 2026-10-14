@@ -47,18 +47,34 @@ object RemoteProfileFetcher {
         check(SubscriptionConverter.available) {
             Application.application.getString(R.string.profile_mihomo_unavailable)
         }
-        val template = File(TEMPLATE_PATH)
-        check(template.isFile && template.canRead()) {
-            Application.application.getString(R.string.profile_template_missing, TEMPLATE_PATH)
-        }
+        val template = readTemplate()
         val cacheId = profile.cacheId.orEmpty()
         return SubscriptionConverter.convert(
             typed.remoteURL,
-            conversionTemplate(template.readText(), cacheId),
+            conversionTemplate(template, cacheId),
             typed.userAgent.ifBlank { MIHOMO_USER_AGENT },
             typed.insecure,
             cacheId,
         )
+    }
+
+    @Synchronized
+    fun readTemplate(): String {
+        val template = File(TEMPLATE_PATH)
+        if (!template.exists()) {
+            // Install the bundled default only when absent; preserve user templates.
+            val content = Application.application.assets.open("template/template.json").use { it.readBytes() }
+            write(AtomicFile(template), content)
+        }
+        check(template.isFile && template.canRead()) {
+            Application.application.getString(R.string.profile_template_missing, TEMPLATE_PATH)
+        }
+        return template.readText()
+    }
+
+    @Synchronized
+    fun saveTemplate(content: String) {
+        write(AtomicFile(File(TEMPLATE_PATH)), content.toByteArray(Charsets.UTF_8))
     }
 
     suspend fun create(profile: Profile): Profile = updateMutex.withLock {

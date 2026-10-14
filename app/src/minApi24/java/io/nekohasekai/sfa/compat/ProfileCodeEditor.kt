@@ -5,7 +5,12 @@ import android.graphics.Rect
 import android.graphics.Typeface
 import android.graphics.drawable.GradientDrawable
 import android.graphics.drawable.InsetDrawable
+import android.view.LayoutInflater
 import android.view.View
+import android.view.ViewGroup
+import android.widget.AbsListView
+import android.widget.ImageView
+import android.widget.TextView
 import androidx.core.graphics.ColorUtils
 import com.itsaky.androidide.treesitter.json.TSLanguageJson
 import io.github.rosemoe.sora.editor.ts.TsLanguageSpec
@@ -16,6 +21,7 @@ import io.github.rosemoe.sora.lang.styling.TextStyle
 import io.github.rosemoe.sora.widget.CodeEditor
 import io.github.rosemoe.sora.widget.EditorSearcher
 import io.github.rosemoe.sora.widget.component.EditorAutoCompletion
+import io.github.rosemoe.sora.widget.component.EditorCompletionAdapter
 import io.github.rosemoe.sora.widget.schemes.EditorColorScheme
 
 class ProfileCodeEditor(context: Context, private val syntax: CodeEditorSyntax = CodeEditorSyntax.JSON) {
@@ -88,6 +94,7 @@ class ProfileCodeEditor(context: Context, private val syntax: CodeEditorSyntax =
             getComponent(EditorAutoCompletion::class.java).popup.setOnDismissListener {
                 onCompletionWindowClosed?.invoke()
             }
+            getComponent(EditorAutoCompletion::class.java).setAdapter(ConfigCompletionAdapter())
             subscribeEvent(ContentChangeEvent::class.java) { _, _ -> onTextChanged?.invoke() }
             subscribeEvent(PublishSearchResultEvent::class.java) { _, _ ->
                 if (searcher.hasQuery() && searcher.matchedPositionCount > 0 && !searcher.isMatchedPositionSelected) {
@@ -243,6 +250,39 @@ class ProfileCodeEditor(context: Context, private val syntax: CodeEditorSyntax =
         val count = if (searcher.hasQuery()) searcher.matchedPositionCount else 0
         val current = if (count > 0) searcher.currentMatchedPositionIndex + 1 else 0
         onSearchResultChanged?.invoke(count, current)
+    }
+}
+
+private class ConfigCompletionAdapter : EditorCompletionAdapter() {
+    override fun getItemHeight(): Int = (45 * context.resources.displayMetrics.density).toInt()
+
+    override fun getView(position: Int, convertView: View?, parent: ViewGroup, isCurrentCursorPosition: Boolean): View {
+        val view = convertView ?: LayoutInflater.from(context).inflate(
+            io.github.rosemoe.sora.R.layout.default_completion_result_item,
+            parent,
+            false,
+        )
+        // The popup reserves getItemHeight() for every candidate. Keep the actual
+        // row at that height too, so hiding the description does not shrink it
+        // and leave the remaining popup space below the content.
+        view.layoutParams = AbsListView.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, getItemHeight())
+        val item = getItem(position)
+        view.findViewById<TextView>(io.github.rosemoe.sora.R.id.result_item_label).apply {
+            text = item.label
+            setTextColor(getThemeColor(EditorColorScheme.COMPLETION_WND_TEXT_PRIMARY))
+        }
+        view.findViewById<TextView>(io.github.rosemoe.sora.R.id.result_item_desc).apply {
+            text = item.desc
+            // An empty second line otherwise pushes the label above the icon center.
+            visibility = if (item.desc.isNullOrBlank()) View.GONE else View.VISIBLE
+            setTextColor(getThemeColor(EditorColorScheme.COMPLETION_WND_TEXT_SECONDARY))
+        }
+        view.findViewById<ImageView>(io.github.rosemoe.sora.R.id.result_item_image).setImageDrawable(item.icon)
+        view.tag = position
+        view.setBackgroundColor(
+            if (isCurrentCursorPosition) getThemeColor(EditorColorScheme.COMPLETION_WND_ITEM_CURRENT) else 0,
+        )
+        return view
     }
 }
 
